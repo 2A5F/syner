@@ -40,6 +40,8 @@ use utils::*;
 
 const CONFIG_PATH: &'static str = "./syner_server.toml";
 
+const BACKUP_PATH: &'static str = "./.c/";
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let config = if !tokio::fs::try_exists(CONFIG_PATH).await? {
@@ -53,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
     init_logger()?;
 
     let content_path = Arc::new(config.content_path.clone());
-    let backup_path = Arc::new(PathBuf::from_str("./.c")?);
+    let backup_path = Arc::new(PathBuf::from_str(BACKUP_PATH)?);
 
     tokio::fs::create_dir_all(&*content_path).await?;
     tokio::fs::create_dir_all(&*backup_path).await?;
@@ -61,8 +63,8 @@ async fn main() -> anyhow::Result<()> {
     let manifest = Arc::new(tokio::sync::RwLock::new(
         collect_manifest(config.clone(), content_path.clone()).await?,
     ));
-    ready_for_back_up(backup_path.clone()).await?;
-    backup_conten(
+    ready_for_backup(backup_path.clone()).await?;
+    backup_content(
         config.clone(),
         content_path.clone(),
         backup_path.clone(),
@@ -290,19 +292,19 @@ async fn re_collect_manifest(
     tokio::fs::create_dir_all(&*backup_path).await?;
     let new = collect_manifest(config.clone(), content_path.clone()).await?;
     let mut manifest = manifest.write().await;
-    ready_for_back_up(backup_path.clone()).await?;
-    backup_conten(config, content_path.clone(), backup_path, &*content_path).await?;
+    ready_for_backup(backup_path.clone()).await?;
+    backup_content(config, content_path.clone(), backup_path, &*content_path).await?;
     *manifest = new;
     sprintln!("清单加载完成")?;
     Ok(())
 }
 
-async fn ready_for_back_up(backup_path: Arc<PathBuf>) -> anyhow::Result<()> {
+async fn ready_for_backup(backup_path: Arc<PathBuf>) -> anyhow::Result<()> {
     tokio::task::spawn_blocking(move || remove_dir_all::ensure_empty_dir(&*backup_path)).await??;
     Ok(())
 }
 
-async fn backup_conten(
+async fn backup_content(
     config: Arc<Config>,
     content_path: Arc<PathBuf>,
     backup_path: Arc<PathBuf>,
@@ -323,13 +325,13 @@ async fn backup_conten(
 
             let meta = entry.metadata().await?;
             if meta.is_dir() {
-                fn f<'a>(
+                fn f(
                     config: Arc<Config>,
                     content_path: Arc<PathBuf>,
                     backup_path: Arc<PathBuf>,
                     cur_dir: PathBuf,
-                ) -> impl Future<Output = anyhow::Result<()>> + Send + 'a {
-                    async move { backup_conten(config, content_path, backup_path, &cur_dir).await }
+                ) -> impl Future<Output = anyhow::Result<()>> + Send {
+                    async move { backup_content(config, content_path, backup_path, &cur_dir).await }
                 }
                 tokio::spawn(f(
                     config.clone(),
@@ -386,7 +388,7 @@ async fn server_thread(
         .and(warp::get().or(warp::head()))
         .unify()
         .and(log_req(true))
-        .and(warp::fs::dir("./.c/"));
+        .and(warp::fs::dir(BACKUP_PATH));
     let fallback = warp::any()
         .and(log_req(false))
         .map(|| StatusCode::IM_A_TEAPOT);

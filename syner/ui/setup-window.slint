@@ -1,0 +1,99 @@
+import { VerticalBox } from "std-widgets.slint";
+
+import { Config, ConfigViewModel, DeleteModeViewModel } from "config.slint";
+import { Button, LabelX } from "ui.slint";
+
+export component SetupWindow inherits Window {
+    width: 640px;
+    height: 320px;
+    default-font-size: 16px;
+    default-font-family: "Microsoft YaHei UI";
+    default-font-weight: 100;
+    background: transparent;
+    title: "初次配置";
+    no-frame: true;
+//
+    public function set_data(data: ConfigViewModel) {
+        config.cwd = data.cwd;
+        config.server = data.server;
+        config.delete_mode = data.delete-mode;
+    }
+    public function set_cwd_error(err: string) {
+        config.cwd-error = err;
+    }
+    public function set_server_error(err: string) {
+        config.server-error = err;
+    }
+    public function set_result_error(err: string) {
+        config.result-error = err;
+    }
+//
+    callback check-model(data: ConfigViewModel) -> bool;
+    callback save-config();
+//
+    public function show() {
+        self.no-frame = false;
+        root_el.opacity = 1;
+        self.width = 640px;
+        self.height = 320px;
+    }
+    public function hide() {
+        self.no-frame = true;
+        root_el.opacity = 0;
+        self.width = 641px;
+        self.height = 321px;
+    }
+//
+    root_el := FocusScope {
+        opacity: 1;
+        animate opacity, width, height { duration: 0.25s; }
+//
+        key-pressed(event) => {
+            accept
+        }
+//
+        VerticalBox {
+            Rectangle {
+                background: rgba(255, 255, 255, 0.75);
+                border-radius: 8px;
+                drop-shadow-blur: 5px;
+                drop-shadow-color: rgba(0, 0, 0, 0.1);
+//
+                VerticalBox {
+                    padding: 12px;
+                    padding-left: 16px;
+                    padding-right: 16px;
+                    alignment: start;
+//
+                    Text {
+                        text: "初次配置";
+                        font-size: 24px;
+                    }
+
+                    Rectangle {
+                        padding: 10px;
+//
+                        config := Config { }
+                    }
+                }
+            }
+
+            VerticalBox {
+                padding: 12px;
+                padding-top: 8px;
+                padding-bottom: 8px;
+//
+                Button {
+                    height: 35px;
+                    text: "继续";
+                    primary: true;
+                    clicked => {
+                        if (check-model({ cwd: config.cwd, server: config.server, delete_mode: config.delete_mode })) {
+                            save-config()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,639 @@
+import { HorizontalBox, VerticalBox, Palette } from "std-widgets.slint";
+
+export struct TextStyle {
+    font-size: relative-font-size,
+    font-weight: int,
+}
+
+export global AppFontSettings {
+    in-out property <int> light-font-weight: 300;
+    in-out property <int> regular-font-weight: 400;
+    in-out property <int> semibold-font-weight: 600;
+    in-out property <TextStyle> body: { font-size: 14 * 0.0769rem, font-weight: regular-font-weight };
+    in-out property <TextStyle> body-strong: { font-size: 14 * 0.0769rem, font-weight: semibold-font-weight };
+    in-out property <TextStyle> title: { font-size: 28 * 0.0769rem, font-weight: semibold-font-weight };
+}
+
+export global AppPalette {
+    property <ColorScheme> color-scheme: Palette.color-scheme;
+    property <bool> dark-color-scheme: color-scheme == ColorScheme.dark;
+
+    // base palette
+    in-out property <brush> background: dark-color-scheme ? #1C1C1C : #FAFAFA;
+    in-out property <brush> foreground: dark-color-scheme ? #FFFFFF : #000000E6;
+    in-out property <brush> alternate-background: dark-color-scheme ? #2C2C2C : #f0f0f0;
+    in-out property <brush> alternate-foreground: dark-color-scheme ? #FFFFFF : #000000E6;
+    in-out property <brush> control-background: dark-color-scheme ? #FFFFFF0F : #FFFFFFB3;
+    in-out property <brush> control-foreground: dark-color-scheme ? #FFFFFF : #000000E6;
+    in-out property <brush> accent-background: dark-color-scheme ? #4f52b2 : #5b5fc7;
+    in-out property <brush> accent-background-hover: dark-color-scheme ? #5b5fc7 : #4f52b2;
+    in-out property <brush> accent-background-pressed: dark-color-scheme ? #383966 : #383966;
+    in-out property <brush> accent2-background: dark-color-scheme ? #2f2f4a : #e8ebfa;
+    in-out property <brush> accent2-background-hover: dark-color-scheme ? #383966 : #dce0fa;
+    in-out property <brush> accent2-background-pressed: dark-color-scheme ? #2b2b40 : #b6bcfa;
+    in-out property <brush> accent-foreground: dark-color-scheme ? #000000 : #FFFFFF;
+    in-out property <brush> selection-background: #5b5fc7;
+    in-out property <brush> selection-foreground: dark-color-scheme ? #000000 : #FFFFFF;
+    in-out property <brush> border: dark-color-scheme ? #FFFFFF14 : #00000073;
+
+    // additional palette
+    in-out property <brush> secondary-accent-background: dark-color-scheme ? #7f85f5E6 : #5b5fc7E6;
+    in-out property <brush> tertiary-accent-background: dark-color-scheme ? #7f85f5CC : #5b5fc7CC;
+    in-out property <brush> accent-disabled: dark-color-scheme ? #FFFFFF29 : #00000038;
+    in-out property <brush> accent-control-border: dark-color-scheme ? @linear-gradient(180deg, #FFFFFF14 90.67%, #00000024 100%) : @linear-gradient(180deg, #FFFFFF14 90.67%, #00000066 100%);
+    in-out property <brush> control-border: dark-color-scheme ? @linear-gradient(180deg, #FFFFFF17 0%, #00000012 8.33%) : @linear-gradient(180deg, #0000000F 90.58%, #00000029 100%);
+    in-out property <brush> text-accent-foreground-secondary: dark-color-scheme ? #00000080 : #FFFFFFB3;
+    in-out property <brush> text-accent-foreground-disabled: dark-color-scheme ? #FFFFFF87 : #FFFFFF;
+    in-out property <brush> text-secondary: dark-color-scheme ? #FFFFFFC9 : #00000099;
+    in-out property <brush> text-tertiary: dark-color-scheme ? #FFFFFF8A : #00000073;
+    in-out property <brush> text-disabled: dark-color-scheme ? #FFFFFF5E : #0000005E;
+    in-out property <brush> text-control-border: dark-color-scheme ? @linear-gradient(180deg, #FFFFFF14 99.98%, #FFFFFF8A 100%, #FFFFFF8A 100%) : @linear-gradient(180deg, #0000000F 99.99%, #00000073 100%, #00000073 100%);
+    in-out property <brush> control-secondary: dark-color-scheme ? #FFFFFF14 : #F9F9F980;
+    in-out property <brush> control-tertiary: dark-color-scheme ? #FFFFFF08 : #F9F9F94D;
+    in-out property <brush> control-disabled: dark-color-scheme ? #FFFFFF0A : #F9F9F94D;
+    in-out property <brush> control-alt-secondary: dark-color-scheme ? #0000001A : #00000005;
+    in-out property <brush> control-alt-tertiary: dark-color-scheme ? #FFFFFF0A : #0000000F;
+    in-out property <brush> control-alt-quartiary: dark-color-scheme ? #FFFFFF12 : #00000017;
+    in-out property <brush> control-alt-disabled: transparent;
+    in-out property <brush> control-strong-stroke: dark-color-scheme ? #FFFFFF99 : #00000099;
+    in-out property <brush> control-strong-stroke-disabled: dark-color-scheme ? #FFFFFF29 : #00000038;
+    in-out property <brush> control-solid: dark-color-scheme ? #454545 : #FFFFFF;
+    in-out property <brush> circle-border: dark-color-scheme ? @linear-gradient(180deg, #FFFFFF17 0%, #FFFFFF12 100%) : @linear-gradient(180deg, #0000000F 0%, #00000029 100%);
+    in-out property <brush> control-input-active: dark-color-scheme ? #1E1E1EB3 : #FFFFFF;
+    in-out property <brush> focus-stroke-inner: dark-color-scheme ? #000000B3 : #FFFFFF;
+    in-out property <brush> focus-stroke-outer: dark-color-scheme ? #FFFFFF : #000000E6;
+    in-out property <brush> control-background-stroke-flyout: dark-color-scheme ? #00000033 : #0000000F;
+    in-out property <brush> sub-title-secondary: dark-color-scheme ? #FFFFFF0F : #0000000A;
+    in-out property <brush> sub-title-tertiary: dark-color-scheme ? #FFFFFF0A : #00000005;
+    in-out property <brush> shadow: dark-color-scheme ? #00000042 : #00000024;
+    in-out property <brush> subtle: dark-color-scheme ? #FFFFFF0F : #0000000A;
+    in-out property <brush> subtle-secondary: dark-color-scheme ? #FFFFFF0F : #0000000A;
+    in-out property <brush> subtle-tertiary: dark-color-scheme ? #FFFFFF0A : #00000005;
+    in-out property <brush> divider: dark-color-scheme ? #FFFFFF14 : #00000014;
+    in-out property <brush> layer-on-mica-base-alt: dark-color-scheme ? #3A3A3A73 : #FFFFFFB3;
+    in-out property <brush> layer-on-mica-base-alt-secondary: dark-color-scheme ? #FFFFFF0F : #0000000A;
+    in-out property <brush> card-stroke: dark-color-scheme ? #0000001A : #0000000F;
+    in-out property <brush> state: dark-color-scheme ? #ffffff : #000000;
+    in-out property <brush> state-secondary: dark-color-scheme ? #000000 : #ffffff;
+}
+
+export component FocusBorder inherits Rectangle {
+    border-width: 2px;
+    border-color: AppPalette.focus-stroke-outer;
+    Rectangle {
+        x: parent.border-width;
+        y: parent.border-width;
+        width: parent.width - 2 * parent.border-width;
+        height: parent.height - 2 * parent.border-width;
+        border-width: 1px;
+        border-radius: parent.border-radius - 2px;
+        border-color: AppPalette.focus-stroke-inner;
+    }
+}
+
+export component Button {
+    in property <string> text;
+    in property <image> icon;
+    in property <bool> primary;
+    in property <bool> secondary;
+    in property <bool> enabled <=> i-touch-area.enabled;
+    in property <bool> checkable;
+    in property <bool> colorize-icon;
+    out property <bool> has-focus: i-focus-scope.has-focus;
+    out property <bool> pressed: self.enabled && i-touch-area.pressed;
+    in-out property <bool> checked;
+    callback clicked;
+    private property <brush> text-color: primary || checked ? Palette.accent-foreground : Palette.control-foreground;
+    min-width: max(32px, i-layout.min-width);
+    min-height: max(32px, i-layout.min-height);
+    horizontal-stretch: 0;
+    vertical-stretch: 0;
+    forward-focus: i-focus-scope;
+    accessible-role: button;
+    accessible-enabled: root.enabled;
+    accessible-checkable: root.checkable;
+    accessible-checked: root.checked;
+    accessible-label: root.text;
+    accessible-action-default => {
+        i-touch-area.clicked();
+    }
+    states [
+        disabled when !root.enabled: {
+            i-background.background: root.primary || root.checked ? AppPalette.accent-disabled : AppPalette.control-disabled;
+            i-border.border-color: root.primary || root.checked ? transparent : AppPalette.border;
+            root.text-color: root.primary || root.checked ? AppPalette.text-accent-foreground-disabled : AppPalette.text-disabled;
+        }
+        pressed when root.pressed: {
+            i-background.background: root.primary || root.checked ? AppPalette.accent-background-pressed : secondary ? AppPalette.accent2-background-pressed : AppPalette.control-tertiary;
+            i-border.border-color: AppPalette.border;
+            root.text-color: root.primary || root.checked ? AppPalette.text-accent-foreground-secondary : AppPalette.text-secondary;
+        }
+        hover when i-touch-area.has-hover: {
+            i-background.background: root.primary || root.checked ? AppPalette.accent-background-hover : secondary ? AppPalette.accent2-background-hover : AppPalette.control-secondary;
+        }
+        checked when root.checked: {
+            i-background.background: AppPalette.accent-background;
+            i-border.border-color: AppPalette.accent-control-border;
+            root.text-color: AppPalette.accent-foreground;
+        }
+    ]
+    i-background := Rectangle {
+        border-radius: 4px;
+        background: root.primary ? AppPalette.accent-background : secondary ? AppPalette.accent2-background : AppPalette.control-background;
+        animate background, border-color { duration: 150ms; }
+        i-border := Rectangle {
+            border-radius: parent.border-radius;
+            border-width: 1px;
+            border-color: root.primary ? AppPalette.accent-control-border : AppPalette.control-border;
+        }
+
+        i-layout := HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 12px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            spacing: 4px;
+            alignment: center;
+            if (root.icon.width > 0 && root.icon.height > 0): Image {
+                y: (parent.height - self.height) / 2;
+                source <=> root.icon;
+                width: 20px;
+                colorize: root.colorize-icon ? root.text-color : transparent;
+            }
+            if (root.text != ""): Text {
+                font-size: AppFontSettings.body.font-size;
+                font-weight: AppFontSettings.body.font-weight;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                text: root.text;
+                color: root.text-color;
+                animate color { duration: 150ms; }
+                accessible-role: none;
+            }
+        }
+    }
+
+    i-touch-area := TouchArea {
+        clicked => {
+            if (root.checkable) {
+                root.checked = !root.checked;
+            }
+            root.clicked();
+        }
+    }
+
+    i-focus-scope := FocusScope {
+        x: 0;
+        width: 0; // Do not react on clicks
+        enabled <=> root.enabled;
+        key-pressed(event) => {
+            if (event.text == " " || event.text == "\n") {
+                i-touch-area.clicked();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
+    // focus border
+    if (root.has-focus && root.enabled): FocusBorder {
+        border-radius: i-background.border-radius;
+    }
+}
+
+export component LineEditBase inherits Rectangle {
+    in property <string> placeholder-text;
+    in property <length> font-size <=> text-input.font-size;
+    in-out property <string> text <=> text-input.text;
+    in-out property <brush> placeholder-color;
+    in property <bool> enabled <=> text-input.enabled;
+    out property <bool> has-focus: text-input.has-focus;
+    in property <InputType> input-type <=> text-input.input-type;
+    in property <TextHorizontalAlignment> horizontal-alignment <=> text-input.horizontal-alignment;
+    in property <bool> read-only <=> text-input.read-only;
+    in property <int> font-weight <=> text-input.font-weight;
+    in property <brush> text-color;
+    in property <color> selection-background-color <=> text-input.selection-background-color;
+    in property <color> selection-foreground-color <=> text-input.selection-foreground-color;
+    in property <length> margin;
+    callback accepted(text: string);
+    callback edited(text: string);
+    callback key-pressed(event: KeyEvent) -> EventResult;
+    callback key-released(event: KeyEvent) -> EventResult;
+    public function set-selection-offsets(start: int, end: int) {
+        text-input.set-selection-offsets(start, end);
+    }
+    public function select-all() {
+        text-input.select-all();
+    }
+    public function clear-selection() {
+        text-input.clear-selection();
+    }
+    public function cut() {
+        text-input.cut();
+    }
+    public function copy() {
+        text-input.copy();
+    }
+    public function paste() {
+        text-input.paste();
+    }
+
+    // on width < 1px or if the `TextInput` is clipped it cannot be focused therefore min-width 1px
+    min-width: 1px;
+    min-height: text-input.preferred-height;
+    clip: true;
+    forward-focus: text-input;
+    placeholder := Text {
+        width: 100%;
+        height: 100%;
+        vertical-alignment: center;
+        text: (root.text == "" && text-input.preedit-text == "") ? root.placeholder-text : "";
+        font-size: text-input.font-size;
+        font-italic: text-input.font-italic;
+        font-weight: text-input.font-weight;
+        font-family: text-input.font-family;
+        color: root.placeholder-color;
+        horizontal-alignment: root.horizontal-alignment;
+        // the label is set on the LineEdit itself
+        accessible-role: none;
+    }
+
+    text-input := TextInput {
+        property <length> computed-x;
+        x: min(0px, max(parent.width - self.width - self.text-cursor-width, self.computed-x));
+        width: max(parent.width - self.text-cursor-width, self.preferred-width);
+        height: 100%;
+        vertical-alignment: center;
+        single-line: true;
+        color: root.text-color;
+        cursor-position-changed(cursor-position) => {
+            if cursor-position.x + self.computed_x < root.margin {
+                self.computed_x = - cursor-position.x + root.margin;
+            } else if cursor-position.x + self.computed_x > parent.width - root.margin - self.text-cursor-width {
+                self.computed_x = parent.width - cursor-position.x - root.margin - self.text-cursor-width;
+            }
+        }
+        accepted => {
+            root.accepted(self.text);
+        }
+        edited => {
+            root.edited(self.text);
+        }
+        key-pressed(event) => {
+            root.key-pressed(event)
+        }
+        key-released(event) => {
+            root.key-released(event)
+        }
+    }
+}
+
+export component LineEdit {
+    in property <bool> enabled <=> base.enabled;
+    in property <InputType> input-type <=> base.input-type;
+    in property <TextHorizontalAlignment> horizontal-alignment <=> base.horizontal-alignment;
+    in property <bool> read-only <=> base.read-only;
+    in property <length> font-size <=> base.font-size;
+    in property <string> placeholder-text <=> base.placeholder-text;
+    out property <bool> has-focus <=> base.has-focus;
+    in-out property <string> text <=> base.text;
+    callback accepted <=> base.accepted;
+    callback edited <=> base.edited;
+    callback key-pressed <=> base.key-pressed;
+    callback key-released <=> base.key-released;
+    accessible-role: text-input;
+    accessible-enabled: root.enabled;
+    accessible-value <=> text;
+    accessible-placeholder-text: text == "" ? placeholder-text : "";
+    accessible-action-set-value(v) => {
+        text = v;
+        edited(v);
+    }
+    public function set-selection-offsets(start: int, end: int) {
+        base.set-selection-offsets(start, end);
+    }
+    public function select-all() {
+        base.select-all();
+    }
+    public function clear-selection() {
+        base.clear-selection();
+    }
+    public function cut() {
+        base.cut();
+    }
+    public function copy() {
+        base.copy();
+    }
+    public function paste() {
+        base.paste();
+    }
+    vertical-stretch: 0;
+    horizontal-stretch: 1;
+    min-width: max(160px, layout.min-width);
+    min-height: max(32px, layout.min-height);
+    forward-focus: base;
+    states [
+        disabled when !root.enabled: {
+            background.background: AppPalette.control-disabled;
+            background.border-color: AppPalette.border;
+            base.text-color: AppPalette.text-disabled;
+            base.selection-foreground-color: AppPalette.text-accent-foreground-disabled;
+            base.placeholder-color: AppPalette.text-disabled;
+        }
+        focused when root.has-focus: {
+            background.background: AppPalette.control-input-active;
+            background.border-color: AppPalette.border;
+            focus-border.background: AppPalette.accent-background;
+            base.placeholder-color: AppPalette.text-tertiary;
+        }
+    ]
+    background := Rectangle {
+        border-radius: 4px;
+        background: AppPalette.control-background;
+        border-width: 1px;
+        border-color: AppPalette.text-control-border;
+        animate background, border-color, border-width { duration: 150ms; }
+        layout := HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 12px;
+            base := LineEditBase {
+                font-size: AppFontSettings.body.font-size;
+                font-weight: AppFontSettings.body.font-weight;
+                selection-background-color: AppPalette.selection-background;
+                selection-foreground-color: AppPalette.accent-foreground;
+                text-color: AppPalette.foreground;
+                placeholder-color: AppPalette.text-secondary;
+                margin: layout.padding-left + layout.padding-right;
+                animate placeholder-color { duration: 150ms; }
+            }
+        }
+
+        focus-border := Rectangle {
+            x: parent.border-radius;
+            y: parent.height - self.height;
+            width: parent.width - 2 * parent.border-radius;
+            height: 2px;
+            animate background { duration: 150ms; }
+        }
+    }
+}
+
+export component Switch {
+    in property <bool> enabled: true;
+    in property <string> text;
+    in property <length> font-size: AppFontSettings.body.font-size;
+    in property <int> font-weight: AppFontSettings.body.font-weight;
+    in-out property <bool> checked;
+    out property <bool> has-focus: focus-scope.has-focus;
+    callback toggled;
+    in property <color> color;
+    in property <bool> override-color: false;
+    private property <color> text-color: AppPalette.foreground;
+    function toggle-checked() {
+        if (!root.enabled) {
+            return;
+        }
+        root.checked = !root.checked;
+        root.toggled();
+    }
+    min-width: 40px;
+    min-height: max(20px, layout.min-height);
+    vertical-stretch: 0;
+    horizontal-stretch: 0;
+    accessible-enabled: root.enabled;
+    accessible-label: root.text;
+    accessible-checkable: true;
+    accessible-checked <=> root.checked;
+    accessible-role: switch;
+    accessible-action-default => {
+        root.checked = !root.checked;
+        root.toggled();
+    }
+    forward-focus: focus-scope;
+    states [
+        disabled when !root.enabled: {
+            rail.background: root.checked ? AppPalette.accent-disabled : transparent;
+            rail.border-color: AppPalette.control-strong-stroke-disabled;
+            thumb.background: AppPalette.text-disabled;
+            root.text-color: AppPalette.text-disabled;
+            thumb.background: root.checked ? AppPalette.text-accent-foreground-disabled : AppPalette.text-secondary;
+        }
+        pressed when touch-area.pressed: {
+            rail.background: root.checked ? AppPalette.tertiary-accent-background : AppPalette.control-alt-quartiary;
+            thumb.width: 17px;
+            thumb.height: 14px;
+            thumb.border-width: root.checked ? 1px : 0;
+            thumb.background: root.checked ? AppPalette.accent-foreground : AppPalette.text-secondary;
+        }
+        hover when touch-area.has-hover: {
+            rail.background: root.checked ? AppPalette.secondary-accent-background : AppPalette.control-alt-tertiary;
+            thumb.width: 14px;
+            thumb.border-width: root.checked ? 1px : 0;
+            thumb.background: root.checked ? AppPalette.accent-foreground : AppPalette.text-secondary;
+        }
+        selected when root.checked: {
+            rail.background: AppPalette.accent-background;
+            thumb.border-width: 1px;
+            thumb.border-color: AppPalette.circle-border;
+            thumb.background: AppPalette.accent-foreground;
+        }
+    ]
+    layout := HorizontalLayout {
+        spacing: 12px;
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 40px;
+                height: 20px;
+                rail := Rectangle {
+                    border-radius: 10px;
+                    border-width: root.checked ? 0 : 1px;
+                    border-color: AppPalette.control-strong-stroke;
+                    background: AppPalette.control-alt-secondary;
+                }
+
+                thumb := Rectangle {
+                    x: root.checked ? parent.width - self.width - 4px : 4px;
+                    y: (parent.height - self.height) / 2;
+                    width: 12px;
+                    height: self.width;
+                    border-radius: self.height / 2;
+                    background: AppPalette.text-secondary;
+                    border-color: AppPalette.circle-border;
+                    animate background, width {
+                        duration: 150ms;
+                        easing: linear;
+                    }
+                }
+
+                // focus border
+                if root.has-focus && root.enabled: FocusBorder {
+                    border-radius: rail.border-radius;
+                }
+            }
+        }
+
+        if (root.text != ""): Text {
+            text: root.text;
+            color: root.override-color ? root.color : root.text-color;
+            font-size: font-size;
+            font-weight: font-weight;
+            vertical-alignment: center;
+            horizontal-alignment: left;
+        }
+    }
+
+    touch-area := TouchArea {
+        enabled <=> root.enabled;
+        clicked => {
+            root.toggle-checked();
+        }
+    }
+
+    focus-scope := FocusScope {
+        x: 0;
+        width: 0px; // Do not react on clicks
+        enabled <=> root.enabled;
+        key-pressed(event) => {
+            if (event.text == " " || event.text == "\n") {
+                root.toggle-checked();
+                return accept;
+            }
+            return reject;
+        }
+    }
+}
+
+// ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
+
+export global LabelX {
+    out property <length> spacing: 8px;
+    out property <length> height: 46px;
+    out property <length> inner-height: 32px;
+    out property <color> error-color: #d13438;
+}
+
+export component LabelInput inherits VerticalLayout {
+    in property <string> label: "Label";
+    in-out property <string> text;
+    in property <length> font-size: 16px;
+    in property <string> placeholder-text;
+    in property <length> label-width: 64px;
+    in property <string> error;
+    in property <color> error-color: LabelX.error-color;
+    height: LabelX.height;
+    alignment: start;
+//
+    HorizontalLayout {
+        spacing: LabelX.spacing;
+        alignment: stretch;
+        height: LabelX.inner-height;
+//
+        VerticalLayout {
+            HorizontalLayout {
+                width: label-width;
+                alignment: end;
+//
+                t := Text {
+                    text: label;
+                    font-size: font-size;
+                    horizontal-alignment: right;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    text: "：";
+                    font-size: font-size;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        e := LineEdit {
+            text <=> text;
+            placeholder-text: placeholder-text;
+        }
+    }
+
+    HorizontalLayout {
+        Rectangle {
+            width: label-width + LabelX.spacing * 2;
+        }
+
+        err := Text {
+            text: error;
+            color: error-color;
+            font-size: LabelX.height - LabelX.inner-height - 2px;
+            height: LabelX.height - LabelX.inner-height;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component LabelSwitch inherits VerticalLayout {
+    in property <string> label: "Label";
+    in property <string> text;
+    in property <length> font-size: 16px;
+    in property <length> label-width: 64px;
+    in-out property <bool> checked;
+    in property <color> color;
+    in property <bool> override-color: false;
+    in property <length> sub-font-size: 12px;
+    in property <string> error;
+    in property <color> error-color: LabelX.error-color;
+    callback toggled(checked: bool);
+    height: LabelX.height;
+    alignment: start;
+//
+    HorizontalLayout {
+        alignment: stretch;
+        spacing: LabelX.spacing;
+        height: LabelX.inner-height;
+//
+        VerticalLayout {
+            HorizontalLayout {
+                width: label-width;
+                alignment: end;
+//
+                t := Text {
+                    text: label;
+                    font-size: font-size;
+                    horizontal-alignment: right;
+                    vertical-alignment: center;
+                }
+
+                Text {
+                    text: "：";
+                    font-size: font-size;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        e := Switch {
+            text: text;
+            checked <=> checked;
+            color: color;
+            override-color: override-color;
+            font-size: sub-font-size;
+            toggled => {
+                toggled(checked);
+            }
+        }
+    }
+
+    HorizontalLayout {
+        Rectangle {
+            width: label-width + LabelX.spacing * 2;
+        }
+
+        err := Text {
+            text: error;
+            color: error-color;
+            font-size: LabelX.height - LabelX.inner-height - 2px;
+            height: LabelX.height - LabelX.inner-height;
+            vertical-alignment: center;
+        }
+    }
+}

@@ -1,0 +1,11 @@
+[package]
+edition = "2021"
+name = "model"
+version = "0.1.0"
+
+[dependencies]
+dashmap = {workspace = true}
+serde = {workspace = true}
+serde_bytes = {workspace = true}
+serde_repr = "*"
+uuid = {workspace = true}

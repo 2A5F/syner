@@ -1,0 +1,43 @@
+import { Button, VerticalBox } from "std-widgets.slint";
+
+export { SetupWindow } from "setup-window.slint";
+import { Config, ConfigViewModel, DeleteModeViewModel } from "config.slint";
+
+export component AppWindow inherits Window {
+    min-width: 640px;
+    min-height: 360px;
+    preferred-width: 960px;
+    preferred-height: 540px;
+    default-font-size: 16px;
+    default-font-family: "Microsoft YaHei UI";
+    background: transparent;
+    title: "同步器";
+    no-frame: true;
+    property <ConfigViewModel> config-data;
+//
+    public function set_data(data: ConfigViewModel) {
+        config-data = data;
+    }
+//
+    public function show() {
+        self.no-frame = false;
+        root_el.opacity = 1;
+        self.width = 960px;
+        self.height = 540px;
+    }
+    public function hide() {
+        self.no-frame = true;
+        root_el.opacity = 0;
+        self.width = 961px;
+        self.height = 541px;
+    }
+//
+    root_el := FocusScope {
+        opacity: 1;
+        animate opacity, width, height { duration: 0.25s; }
+//
+        key-pressed(event) => {
+            accept
+        }
+    }
+}

@@ -1,0 +1,25 @@
+[package]
+edition = "2021"
+name = "syner"
+version = "0.1.0"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+
+[dependencies]
+anyhow = {workspace = true}
+i-slint-backend-winit = {workspace = true}
+model = {path = "../model"}
+rmp-serde = {workspace = true}
+serde = {workspace = true}
+sha3 = {workspace = true}
+slint = {workspace = true, default-features = false, features = ["std", "compat-1-2", "renderer-software", "backend-winit", "software-renderer-systemfonts"]}
+toml = {workspace = true}
+url = {workspace = true}
+
+[build-dependencies]
+slint-build = {workspace = true}

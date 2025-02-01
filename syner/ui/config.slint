@@ -1,0 +1,58 @@
+import { VerticalBox, LineEdit } from "std-widgets.slint";
+
+import { LabelInput, LabelSwitch, LabelX } from "ui.slint";
+
+export enum DeleteModeViewModel {
+    Rename,
+    Delete,
+}
+
+export struct ConfigViewModel {
+    cwd: string,
+    server: string,
+    delete_mode: DeleteModeViewModel,
+}
+
+export component Config inherits VerticalBox {
+    in-out property <string> cwd: "./";
+    in-out property <string> server: "";
+    in-out property <DeleteModeViewModel> delete_mode: DeleteModeViewModel.Rename;
+    in property <string> cwd-error;
+    in property <string> server-error;
+    in property <string> result-error;
+    property <length> label-width: 96px;
+//
+    i-cwd := LabelInput {
+        label: "工作目录";
+        label-width: label-width;
+        text <=> cwd;
+        error <=> cwd-error;
+    }
+
+    i-server := LabelInput {
+        label: "同步服务器";
+        label-width: label-width;
+        text <=> server;
+        error <=> server-error;
+    }
+
+    i-delete := LabelSwitch {
+        label: "允许删除";
+        label-width: label-width;
+        text: delete_mode == DeleteModeViewModel.Rename ? "将对标记为删除的文件添加 .del 后缀" : "将直接删除被标记为删除的文件";
+        checked: delete_mode == DeleteModeViewModel.Delete;
+        override-color: delete_mode == DeleteModeViewModel.Delete;
+        color: #d13438;
+        toggled(checked) => {
+            delete_mode = checked ? DeleteModeViewModel.Delete : DeleteModeViewModel.Rename;
+        }
+    }
+
+    Text {
+        text: result-error;
+        color: LabelX.error-color;
+        font-size: LabelX.height - LabelX.inner-height - 2px;
+        height: LabelX.height - LabelX.inner-height;
+        vertical-alignment: center;
+    }
+}

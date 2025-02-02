@@ -1,7 +1,41 @@
-import { Button, VerticalBox } from "std-widgets.slint";
+import { Button, VerticalBox, ListView } from "std-widgets.slint";
 
 export { SetupWindow } from "setup-window.slint";
 import { Config, ConfigViewModel, DeleteModeViewModel } from "config.slint";
+import { ProgressIndicator, TextEdit, AppPalette, ScrollView } from "ui.slint";
+
+export enum ModelState {
+    Manifest,
+    ManifestError,
+    Sync,
+    Finish,
+    Error,
+}
+
+export enum ModelItemState {
+    Pending,
+    Hash,
+    Sync,
+    Finish,
+    NoOp,
+    Error,
+}
+
+export enum ModelItemOp {
+    Sync,
+    Remove,
+}
+
+export struct ModelManifestItem {
+    index: int,
+    op: ModelItemOp,
+    path: string,
+    cur: string,
+    len: string,
+    progress-name: string,
+    progress: float,
+    state: ModelItemState,
+}
 
 export component AppWindow inherits Window {
     min-width: 640px;
@@ -13,7 +47,60 @@ export component AppWindow inherits Window {
     background: transparent;
     title: "同步器";
     no-frame: true;
+    property <string> panic-msg;
     property <ConfigViewModel> config-data;
+    property <[ModelManifestItem]> items: [];
+    property <ModelState> state: ModelState.Manifest;
+    property <string> cur;
+    property <string> len;
+    property <string> progress-name;
+    property <float> progress;
+    //
+    function op_to_string(state: ModelItemOp) -> string {
+        if (state == ModelItemOp.Remove) {
+            return "删除";
+        }
+        return "同步";
+    }
+    function state_to_string(state: ModelItemState) -> string {
+        if (state == ModelItemState.Sync) {
+            return "同步中";
+        }
+        if (state == ModelItemState.Hash) {
+            return "校验中";
+        }
+        if (state == ModelItemState.Finish) {
+            return "已完成";
+        }
+        if (state == ModelItemState.NoOp) {
+            return "无操作";
+        }
+        if (state == ModelItemState.Error) {
+            return "已失败";
+        }
+        return "等待中";
+    }
+    function op_to_color(state: ModelItemOp) -> color {
+        if (state == ModelItemOp.Remove) {
+            return #d13438;
+        }
+        return #54b054;
+    }
+    function state_to_color(state: ModelItemState) -> color {
+        if (state == ModelItemState.Sync) {
+            return #4f6bed;
+        }
+        if (state == ModelItemState.Hash) {
+            return #5c2e91;
+        }
+        if (state == ModelItemState.Finish || state == ModelItemState.NoOp) {
+            return #54b054;
+        }
+        if (state == ModelItemState.Error) {
+            return #d13438;
+        }
+        return #202427;
+    }
 //
     public function set_data(data: ConfigViewModel) {
         config-data = data;
@@ -32,12 +119,181 @@ export component AppWindow inherits Window {
         self.height = 541px;
     }
 //
+    function state_str() -> string {
+        if (state == ModelState.Manifest) {
+            return "正在获取清单";
+        }
+        if (state == ModelState.ManifestError) {
+            return "获取清单失败";
+        }
+        if (state == ModelState.Finish) {
+            return "同步完成";
+        }
+        if (state == ModelState.Error) {
+            return "同步失败";
+        }
+        return "同步中";
+    }
+    public function set_manifest_err(msg: string) {
+        progress.indeterminate = false;
+        state = ModelState.ManifestError;
+        panic-msg = msg;
+    }
+    public function set_manifest_ok(items: [ModelManifestItem]) {
+        progress.indeterminate = false;
+        state = ModelState.Sync;
+        self.items = items;
+    }
+    public function set_sync_ok() {
+        state = ModelState.Finish;
+    }
+    public function set_sync_err(msg: string) {
+        progress.indeterminate = false;
+        state = ModelState.Error;
+        panic-msg = msg;
+    }
+//
+    public function set_manifest_item_len(index: int, len: string) {
+        items[index].len = len;
+    }
+    public function set_manifest_item_cur(index: int, cur: string, progress: float, progress-name: string) {
+        items[index].cur = cur;
+        items[index].progress = progress;
+        items[index].progress-name = progress-name;
+    }
+    public function set_manifest_item_state(index: int, state: ModelItemState) {
+        if (items[index].state == ModelItemState.NoOp && state == ModelItemState.Finish) {
+            return;
+        }
+        items[index].state = state;
+    }
+    public function set_total_len(len: string) {
+        self.len = len;
+    }
+    public function set_total_cur(cur: string, progress: float, progress-name: string) {
+        self.cur = cur;
+        self.progress = progress;
+        self.progress-name = progress-name;
+    }
+//
     root_el := FocusScope {
         opacity: 1;
         animate opacity, width, height { duration: 0.25s; }
 //
         key-pressed(event) => {
             accept
+        }
+
+        VerticalLayout {
+            width: 100%;
+            height: 100%;
+            alignment: stretch;
+//
+            progress := ProgressIndicator {
+                height: 3px;
+                indeterminate: root.state == ModelState.Manifest;
+                progress: root.state == ModelState.Sync ? root.progress : 1;
+                opacity: root.state == ModelState.Sync || root.state == ModelState.Manifest ? 1 : 0;
+                animate opacity { duration: 0.25s; }
+            }
+
+            VerticalLayout {
+                alignment: center;
+                HorizontalLayout {
+                    alignment: center;
+                    Text {
+                        text: root.state == ModelState.Sync ? "\{state_str()} \{root.progress-name}% (\{root.cur}/\{root.len})" : state_str();
+                        font-size: 30px;
+                        font-weight: 100;
+                    }
+                }
+            }
+
+            Rectangle {
+                if panic_msg == "": VerticalLayout {
+                    padding: 10px;
+//
+                    Rectangle {
+                        padding: 10px;
+                        
+//
+                        ListView {
+                            for item in items: VerticalLayout {
+                                padding-bottom: 5px;
+                                padding-top: 5px;
+//
+                                Rectangle {
+                                    clip: true;
+                                    background: rgba(255, 255, 255, 0.75);
+                                    border-radius: 8px;
+                                    drop-shadow-blur: 5px;
+                                    drop-shadow-color: rgba(0, 0, 0, 0.1);
+//
+                                    GridLayout {
+                                        padding-bottom: 10px;
+                                        spacing: 5px;
+                                        ProgressIndicator {
+                                            colspan: 2;
+                                            height: 3px;
+                                            indeterminate: item.state == ModelItemState.Pending;
+                                            progress: item.state == ModelItemState.Sync || item.state == ModelItemState.Hash ? item.progress : 1;
+                                            opacity: item.state == ModelItemState.Sync || item.state == ModelItemState.Hash || item.state == ModelItemState.Pending ? 1 : 0;
+                                            animate opacity { duration: 0.25s; }
+                                        }
+
+                                        Text {
+                                            row: 1;
+                                            col: 0;
+                                            rowspan: 2;
+                                            width: 60px;
+                                            horizontal-alignment: center;
+                                            vertical-alignment: center;
+                                            text: op_to_string(item.op);
+                                            color: op_to_color(item.op);
+                                            font-size: 24px;
+                                        }
+
+                                        Text {
+                                            row: 1;
+                                            col: 1;
+                                            horizontal-alignment: left;
+                                            vertical-alignment: center;
+                                            text: item.path;
+                                            font-size: 20px;
+                                        }
+
+                                        Text {
+                                            animate color { duration: 0.25s; }
+                                            row: 2;
+                                            col: 1;
+                                            horizontal-alignment: left;
+                                            vertical-alignment: top;
+                                            text: item.state == ModelItemState.Sync || item.state == ModelItemState.Hash ? "\{state_to_string(item.state)} \{item.progress-name}% (\{item.cur}/\{item.len})" : state_to_string(item.state);
+                                            color: state_to_color(item.state);
+                                            font-size: 12px;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if panic_msg != "": VerticalLayout {
+                    padding: 10px;
+                    width: 100%;
+                    height: 100%;
+                    TextEdit {
+                        text: panic-msg;
+                        width: 100%;
+                        height: 100%;
+                        has-focus: false;
+                        read-only: true;
+                        wrap: no-wrap;
+                        text-color: #d13438;
+                    }
+                }
+            }
         }
     }
 }

@@ -15,7 +15,7 @@ use dashmap::DashMap;
 use headers::{Header, Range};
 use hyper::header::HeaderValue;
 use log::info;
-use model::{ItemOp, Manifest};
+use model::{calc_hash, ItemOp, Manifest};
 use serde_bytes::ByteBuf;
 use sha3::{Digest, Sha3_256};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -182,7 +182,9 @@ fn print_help() -> anyhow::Result<()> {
     sprintln!(
         r#"? | h | help 				=> 显示此帮助信息
 q | quit | exit | stop 			=> 退出进程
-r | reload 				=> 重新加载文件，重新生成清单"#
+r | reload 				=> 重新加载文件，重新生成清单
+
+在 content 文件夹内放置需要同步的文件，后缀为删除后缀表示要删除的文件（默认.del）"#
     )?;
     Ok(())
 }
@@ -240,25 +242,16 @@ async fn collect_manifest_files(
                 ItemOp::Sync
             };
 
-            let mut file = tokio::fs::File::open(&*path).await?;
+            let file = tokio::fs::File::open(&*path).await?;
             let meta = file.metadata().await?;
             let len = meta.len();
 
-            let mut hasher = Sha3_256::new();
-            {
-                let mut buffer = Vec::with_capacity(1024);
-                unsafe { buffer.set_len(1024) };
-                loop {
-                    let count = file.read(&mut buffer).await?;
-                    if count == 0 {
-                        break;
-                    }
-                    hasher.update(&buffer[..count]);
-                }
-            };
-            let hash = hasher.finalize();
+            let hash = calc_hash(file).await?;
 
-            let rel = pathdiff::diff_paths(&*path, &*root_path).unwrap();
+            let mut rel = pathdiff::diff_paths(&*path, &*root_path).unwrap();
+            if let ItemOp::Remove = op {
+                rel = rel.file_stem().unwrap().into();
+            }
             let parts: Vec<_> = rel
                 .iter()
                 .map(|s| s.to_string_lossy().to_string())
@@ -266,8 +259,9 @@ async fn collect_manifest_files(
 
             let parts = parts.join("/");
 
-            let item = (op, len,  hash.to_vec().into());
-            log::info!(target: "manifest", "Loaded {:?} {{ op = {:?}, len = {}, hash = {:?} }}", parts, item.0, item.1, base16ct::lower::encode_string(&hash));
+            log::info!(target: "manifest", "Loaded {:?} {{ op = {:?}, len = {}, hash = {:?} }}", parts, op, len, base16ct::lower::encode_string(&hash));
+            
+            let item = (op, len,  hash.into());
             map.insert(parts, item);
 
             Ok(())

@@ -8,3 +8,8 @@ pub fn is_valid_path(path: &str) -> bool {
 pub fn is_valid_path(path: &str) -> bool {
     !path.contains('\0') && !path.split('/').any(|part| part.is_empty())
 }
+
+pub struct SendT<T>(pub T);
+
+unsafe impl<T> Send for SendT<T> {}
+unsafe impl<T> Sync for SendT<T> {}

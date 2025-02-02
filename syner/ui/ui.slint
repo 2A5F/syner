@@ -505,6 +505,386 @@ export component Switch {
     }
 }
 
+export component ProgressIndicator {
+    in property <float> progress;
+    in property <bool> indeterminate;
+    min-height: 3px;
+    horizontal-stretch: 1;
+    vertical-stretch: 0;
+    accessible-role: progress-indicator;
+    accessible-value: !root.indeterminate ? root.progress : "";
+    accessible-value-minimum: 0.0;
+    accessible-value-maximum: 1.0;
+    Rectangle {
+        clip: true;
+        // i-rail := Rectangle {
+        //     height: 1px;
+        //     background: AppPalette.border;
+        //     border-radius: 1px;
+        // }
+
+        i-track := Rectangle {
+            width: !root.indeterminate ? parent.width * min(1, max(0, root.progress)) : parent.width;
+            height: 100%;
+            x: !root.indeterminate ? 0px : -parent.width + (parent.width * mod(animation-tick(), 2s) / 1s);
+            border-radius: parent.height;
+            background: AppPalette.accent-background;
+        }
+    }
+}
+
+component ScrollViewButton inherits TouchArea {
+    in property <image> icon;
+    in property <bool> horizontal;
+    width: root.horizontal ? 6px : 8px;
+    height: root.horizontal ? 8px : 6px;
+    icon := Image {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: parent.width;
+        source: root.icon;
+        colorize: AppPalette.border;
+        animate colorize, opacity { duration: 150ms; }
+        animate width, height {
+            duration: 150ms;
+            easing: ease-out;
+        }
+    }
+
+    states [
+        pressed when root.pressed: {
+            opacity: 1;
+            icon.width: root.width - 2px;
+        }
+        hover when root.has-hover: {
+            opacity: 1;
+            icon.colorize: AppPalette.text-secondary;
+        }
+    ]
+}
+
+component ScrollBar inherits Rectangle {
+    in-out property <bool> horizontal;
+    in-out property <length> maximum;
+    in-out property <length> page-size;
+    in-out property <length> value;
+    in property <ScrollBarPolicy> policy: ScrollBarPolicy.as-needed;
+    in property <bool> enabled;
+    private property <length> offset: 16px;
+    private property <length> size: 2px;
+    private property <length> track-size: root.horizontal ? root.width - 2 * root.offset : root.height - 2 * offset;
+    private property <length> step-size: 10px;
+    border-width: 1px;
+    border-radius: 7px;
+    visible: (self.policy == ScrollBarPolicy.always-on) || (self.policy == ScrollBarPolicy.as-needed && self.maximum > 0);
+    states [
+        hover when touch-area.has-hover || down-scroll-button.has-hover || up-scroll-button.has-hover: {
+            root.background: AppPalette.alternate-background;
+            root.size: 6px;
+            up-scroll-button.opacity: 1;
+            down-scroll-button.opacity: 1;
+        }
+    ]
+    animate size {
+        duration: 150ms;
+        easing: ease-out;
+    }
+    thumb := Rectangle {
+        width: !root.horizontal ? root.size : root.maximum <= 0phx ? 0phx : max(16px, root.track-size * root.page-size / (root.maximum + root.page-size));
+        height: root.horizontal ? root.size : root.maximum <= 0phx ? 0phx : max(16px, root.track-size * (root.page-size / (root.maximum + root.page-size)));
+        x: !root.horizontal ? parent.width - 4px - self.width : root.offset + (root.track-size - thumb.width) * (-root.value / root.maximum);
+        y: root.horizontal ? parent.height - 4px - self.height : root.offset + (root.track-size - thumb.height) * (-root.value / root.maximum);
+        border-radius: (root.horizontal ? self.height : self.width) / 2;
+        background: AppPalette.border;
+        animate width, height {
+            duration: 150ms;
+            easing: ease-out;
+        }
+    }
+
+    touch-area := TouchArea {
+        property <length> pressed-value;
+        width: parent.width;
+        height: parent.height;
+        pointer-event(event) => {
+            if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                self.pressed-value = -root.value;
+            }
+        }
+        moved => {
+            if (self.enabled && self.pressed) {
+                root.value = -max(0px, min(root.maximum, self.pressed-value + (root.horizontal ? (touch-area.mouse-x - touch-area.pressed-x) * (root.maximum / (root.track-size - thumb.width)) : (touch-area.mouse-y - touch-area.pressed-y) * (root.maximum / (root.track-size - thumb.height)))));
+            }
+        }
+        scroll-event(event) => {
+            if (root.horizontal && event.delta-x != 0) {
+                root.value = max(-root.maximum, min(0px, root.value + event.delta-x));
+                return accept;
+            } else if (!root.horizontal && event.delta-y != 0) {
+                root.value = max(-root.maximum, min(0px, root.value + event.delta-y));
+                return accept;
+            }
+            reject
+        }
+    }
+
+    up-scroll-button := ScrollViewButton {
+        opacity: 0;
+        x: !root.horizontal ? (parent.width - self.width) / 2 : 4px;
+        y: root.horizontal ? (parent.height - self.height) / 2 : 4px;
+        // icon: root.horizontal ? Icons.left : Icons.up;
+        horizontal: root.horizontal;
+        clicked => {
+            root.value = min(0px, root.value + root.step-size);
+        }
+    }
+
+    down-scroll-button := ScrollViewButton {
+        opacity: 0;
+        x: !root.horizontal ? (parent.width - self.width) / 2 : root.width - self.width - 4px;
+        y: root.horizontal ? (parent.height - self.height) / 2 : root.height - self.height - 4px;
+        // icon: root.horizontal ? Icons.right : Icons.down;
+        horizontal: root.horizontal;
+        clicked => {
+            root.value = max(-root.maximum, root.value - root.step-size);
+        }
+    }
+}
+
+export component ScrollView {
+    in property <bool> enabled: true;
+    out property <length> visible-width <=> flickable.width;
+    out property <length> visible-height <=> flickable.height;
+    in-out property <length> viewport-width <=> flickable.viewport-width;
+    in-out property <length> viewport-height <=> flickable.viewport-height;
+    in-out property <length> viewport-x <=> flickable.viewport-x;
+    in-out property <length> viewport-y <=> flickable.viewport-y;
+    in property <ScrollBarPolicy> vertical-scrollbar-policy <=> vertical-bar.policy;
+    in property <ScrollBarPolicy> horizontal-scrollbar-policy <=> horizontal-bar.policy;
+
+    // FIXME: remove. This property is currently set by the ListView and is used by the native style to draw the scrollbar differently when it has focus
+    in-out property <bool> has-focus;
+    callback scrolled <=> flickable.flicked;
+    min-height: 50px;
+    min-width: 50px;
+    horizontal-stretch: 1;
+    vertical-stretch: 1;
+    preferred-height: 100%;
+    preferred-width: 100%;
+    flickable := Flickable {
+        interactive: false;
+        viewport-y <=> vertical-bar.value;
+        viewport-x <=> horizontal-bar.value;
+        width: parent.width;
+        height: parent.height;
+        @children
+    }
+
+    vertical-bar := ScrollBar {
+        enabled: root.enabled;
+        width: 14px;
+        x: flickable.width + flickable.x - self.width;
+        y: flickable.y;
+        height: flickable.height - horizontal-bar.height;
+        horizontal: false;
+        maximum: flickable.viewport-height - flickable.height;
+        page-size: flickable.height;
+    }
+
+    horizontal-bar := ScrollBar {
+        enabled: root.enabled;
+        width: flickable.width - vertical-bar.width;
+        height: 14px;
+        y: flickable.height + flickable.y - self.height;
+        x: flickable.x;
+        horizontal: true;
+        maximum: flickable.viewport-width - flickable.width;
+        page-size: flickable.width;
+    }
+}
+
+export component TextEditBase inherits Rectangle {
+    in property <brush> text-color;
+    in property <length> scroll-view-padding;
+    in property <TextWrap> wrap <=> text-input.wrap;
+    in property <TextHorizontalAlignment> horizontal-alignment <=> text-input.horizontal-alignment;
+    in property <bool> read-only <=> text-input.read-only;
+    in property <length> font-size <=> text-input.font-size;
+    in property <bool> enabled <=> text-input.enabled;
+    in-out property <bool> has-focus: text-input.has-focus;
+    out property <length> visible-width <=> scroll-view.visible-width;
+    out property <length> visible-height <=> scroll-view.visible-height;
+    in-out property <string> text <=> text-input.text;
+    in-out property <length> viewport-x <=> scroll-view.viewport-x;
+    in-out property <length> viewport-y <=> scroll-view.viewport-y;
+    in-out property <length> viewport-width <=> scroll-view.viewport-width;
+    in-out property <length> viewport-height <=> scroll-view.viewport-height;
+    in property <brush> foreground <=> text-input.color;
+    in property <int> font-weight <=> text-input.font-weight;
+    in property <brush> selection-background-color;
+    in property <brush> selection-foreground-color;
+    in property <string> placeholder-text;
+    in property <brush> placeholder-color;
+    callback edited(text: string);
+    callback key-pressed(event: KeyEvent) -> EventResult;
+    callback key-released(event: KeyEvent) -> EventResult;
+    public function set-selection-offsets(start: int, end: int) {
+        text-input.set-selection-offsets(start, end);
+    }
+    public function select-all() {
+        text-input.select-all();
+    }
+    public function clear-selection() {
+        text-input.clear-selection();
+    }
+    public function cut() {
+        text-input.cut();
+    }
+    public function copy() {
+        text-input.copy();
+    }
+    public function paste() {
+        text-input.paste();
+    }
+    forward-focus: text-input;
+    scroll-view := ScrollView {
+        x: root.scroll-view-padding;
+        y: root.scroll-view-padding;
+        width: parent.width - 2 * root.scroll-view-padding;
+        height: parent.height - 2 * root.scroll-view-padding;
+        viewport-width: root.wrap == TextWrap.no-wrap ? max(self.visible-width, text-input.preferred-width) : self.visible-width;
+        viewport-height: max(self.visible-height, text-input.preferred-height);
+        text-input := TextInput {
+            enabled: true;
+            single-line: false;
+            wrap: word-wrap;
+            selection-background-color: root.selection-background-color;
+            selection-foreground-color: root.selection-foreground-color;
+            color: text-color;
+            edited => {
+                root.edited(self.text);
+            }
+            key-pressed(event) => {
+                root.key-pressed(event)
+            }
+            key-released(event) => {
+                root.key-released(event)
+            }
+            cursor-position-changed(cpos) => {
+                if (cpos.x + root.viewport-x < 12px) {
+                    root.viewport-x = min(0px, max(parent.visible-width - self.width,  - cpos.x + 12px));
+                } else if (cpos.x + root.viewport-x > parent.visible-width - 12px) {
+                    root.viewport-x = min(0px, max(parent.visible-width - self.width,  parent.visible-width - cpos.x - 12px));
+                }
+                if (cpos.y + root.viewport-y < 12px) {
+                    root.viewport-y = min(0px, max(parent.visible-height - self.height,  - cpos.y + 12px));
+                } else if (cpos.y + root.viewport-y > parent.visible-height - 12px - 20px) {
+                    // FIXME: font-height hardcoded to 20px
+                        root.viewport-y = min(0px, max(parent.visible-height - self.height,  parent.visible-height - cpos.y - 12px - 20px));
+                }
+            }
+        }
+    }
+
+    placeholder := Text {
+        x: scroll-view.x;
+        y: scroll-view.y;
+        width: scroll-view.width;
+        vertical-alignment: top;
+        text: (root.text == "" && text-input.preedit-text == "") ? root.placeholder-text : "";
+        font-size: text-input.font-size;
+        font-italic: text-input.font-italic;
+        font-weight: text-input.font-weight;
+        font-family: text-input.font-family;
+        color: root.placeholder-color;
+        overflow: elide;
+        // the label is set on the TextEdit itself
+        accessible-role: none;
+    }
+
+    @children
+}
+
+export component TextEdit {
+    in property <brush> text-color <=> base.text-color;
+    in property <TextWrap> wrap <=> base.wrap;
+    in property <TextHorizontalAlignment> horizontal-alignment <=> base.horizontal-alignment;
+    in property <bool> read-only <=> base.read-only;
+    in property <length> font-size <=> base.font-size;
+    in property <bool> enabled <=> base.enabled;
+    in property <string> placeholder-text <=> base.placeholder-text;
+    in-out property <bool> has-focus: base.has-focus;
+    out property <length> visible-width <=> base.visible-width;
+    out property <length> visible-height <=> base.visible-height;
+    in-out property <string> text <=> base.text;
+    in-out property <length> viewport-x <=> base.viewport-x;
+    in-out property <length> viewport-y <=> base.viewport-y;
+    in-out property <length> viewport-width <=> base.viewport-width;
+    in-out property <length> viewport-height <=> base.viewport-height;
+    callback edited <=> base.edited;
+    callback key-pressed <=> base.key-pressed;
+    callback key-released <=> base.key-released;
+    accessible-role: AccessibleRole.text-input;
+    accessible-enabled: root.enabled;
+    accessible-value <=> text;
+    accessible-placeholder-text: text == "" ? placeholder-text : "";
+    public function set-selection-offsets(start: int, end: int) {
+        base.set-selection-offsets(start, end);
+    }
+    public function select-all() {
+        base.select-all();
+    }
+    public function clear-selection() {
+        base.clear-selection();
+    }
+    public function cut() {
+        base.cut();
+    }
+    public function copy() {
+        base.copy();
+    }
+    public function paste() {
+        base.paste();
+    }
+    forward-focus: base;
+    horizontal-stretch: 1;
+    vertical-stretch: 1;
+    states [
+        disabled when !root.enabled: {
+            base.background: AppPalette.control-disabled;
+            base.border-color: AppPalette.border;
+            base.foreground: AppPalette.text-disabled;
+            base.selection-foreground-color: AppPalette.text-accent-foreground-disabled;
+        }
+        focused when root.has-focus: {
+            base.background: AppPalette.control-input-active;
+            base.border-color: AppPalette.border;
+            i-focus-border.background: AppPalette.accent-background;
+        }
+    ]
+    base := TextEditBase {
+        width: 100%;
+        height: 100%;
+        background: AppPalette.control-background;
+        border-radius: 4px;
+        border-width: 1px;
+        border-color: AppPalette.text-control-border;
+        scroll-view-padding: 12px;
+        foreground: AppPalette.foreground;
+        font-size: AppFontSettings.body.font-size;
+        font-weight: AppFontSettings.body.font-weight;
+        placeholder-color: AppPalette.text-secondary;
+        selection-background-color: AppPalette.selection-background;
+        selection-foreground-color: AppPalette.selection-foreground;
+        i-focus-border := Rectangle {
+            x: parent.border-radius;
+            y: parent.height - self.height;
+            width: parent.width - 2 * parent.border-radius;
+            height: 2px;
+        }
+    }
+}
+
 // ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
 
 export global LabelX {
@@ -637,3 +1017,5 @@ export component LabelSwitch inherits VerticalLayout {
         }
     }
 }
+
+// ===== ===== ===== ===== ===== ===== ===== ===== ===== =====

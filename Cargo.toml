@@ -7,7 +7,7 @@ anyhow = "1"
 chrono = {version = "0.4"}
 dashmap = {version = "6.1", features = ["serde"]}
 encoding_rs = {version = "0.8"}
-headers = {version = "0.3"}
+headers = {version = "0.4"}
 http = {version = "1.2"}
 humantime = {version = "2.1"}
 hyper = {version = "1.6"}
@@ -21,7 +21,8 @@ serde_bytes = {version = "0.11"}
 sha3 = {version = "0.10"}
 slint = {version = "1.9.2", default-features = false, features = ["std", "compat-1-2", "renderer-software", "backend-winit", "software-renderer-systemfonts"]}
 slint-build = "1.9.2"
-tokio = {version = "1.42", features = ["full"]}
+surf = {version = "2.3"}
+tokio = {version = "1.43", features = ["full"]}
 toml = "0.8"
 ulid = {version = "1.1", features = ["serde", "uuid"]}
 url = {version = "2.5", features = ["serde"]}

@@ -22,7 +22,7 @@ sha3 = {version = "0.10"}
 slint = {version = "1.9.2", default-features = false, features = ["std", "compat-1-2", "renderer-software", "backend-winit", "software-renderer-systemfonts"]}
 slint-build = "1.9.2"
 surf = {version = "2.3"}
-tokio = {version = "1.43", features = ["full"]}
+tokio = {version = "1.44", features = ["full"]}
 toml = "0.8"
 ulid = {version = "1.1", features = ["serde", "uuid"]}
 url = {version = "2.5", features = ["serde"]}
